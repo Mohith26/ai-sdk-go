@@ -1497,6 +1497,67 @@ func TestRenderGroupsSameQuestion(t *testing.T) {
 	}
 }
 
+// TestRenderGroupsCopiesOfOneCase checks copies of one case (Adam, 1 Nov): a
+// note that only repeats the copy's own ID, with or without its package,
+// neither keeps copies apart nor shows; any other note still does both; and
+// the name gives every region the copies are in.
+func TestRenderGroupsCopiesOfOneCase(t *testing.T) {
+	t.Parallel()
+
+	copyOf := func(prefix, model string, values ...string) NeedsHuman {
+		return NeedsHuman{
+			Offering: "bedrock:" + prefix + ".openai." + model, Field: reconcile.FieldNewCopy, Rule: "no-rule",
+			Catalogue: "not carried", Page: "In-Region rates only", Values: values,
+			SourceURLs: []string{"https://docs.aws.amazon.com/" + model},
+		}
+	}
+
+	tests := []struct {
+		name  string
+		needs []NeedsHuman
+		want  []string
+	}{
+		{
+			name: "each copy names itself",
+			needs: []NeedsHuman{
+				copyOf("us", "gpt-5.5", "us.openai.gpt-5.5", "In-Region 5.50/33.00/0.55"),
+				copyOf("global", "gpt-5.5", "bedrock:global.openai.gpt-5.5", "In-Region 5.50/33.00/0.55"),
+			},
+			want: []string{
+				"> 1. us and global copies: `bedrock:us.openai.gpt-5.5` and 1 more · new copy\n\n",
+				"**1. us and global copies: `bedrock:us.openai.gpt-5.5` and 1 more · new copy** · no rule covers this (`no-rule`)\n" +
+					"- **Offerings:** `bedrock:us.openai.gpt-5.5`, `bedrock:global.openai.gpt-5.5`\n" +
+					"- **We have:** `not carried`\n- **Vendor's page:** `In-Region rates only`\n" +
+					"- **Agent's notes:** `In-Region 5.50/33.00/0.55`\n",
+			},
+		},
+		{
+			name:  "copies in one region",
+			needs: []NeedsHuman{copyOf("us", "gpt-5.5", "us.openai.gpt-5.5", "no Geo rate"), copyOf("us", "gpt-5.4", "us.openai.gpt-5.4", "no Geo rate")},
+			want:  []string{"> 1. us copies: `bedrock:us.openai.gpt-5.5` and 1 more · new copy\n\n"},
+		},
+		{
+			name:  "a note naming another copy still counts",
+			needs: []NeedsHuman{copyOf("us", "gpt-5.5", "us.openai.gpt-5.4"), copyOf("global", "gpt-5.5", "global.openai.gpt-5.4")},
+			want: []string{
+				"> 1. us copy: `bedrock:us.openai.gpt-5.5` · new copy\n> 2. global copy: `bedrock:global.openai.gpt-5.5` · new copy\n\n",
+				"- **Agent's notes:** `us.openai.gpt-5.4`\n",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			body := Render(oneVendor(Report{NeedsHuman: tt.needs}, Base{}), "", nil, Base{Rules: testRules})
+			for _, want := range tt.want {
+				assert.Contains(t, body, want)
+			}
+		})
+	}
+}
+
 // TestRenderNotesOnce checks the catalogue-written notes against the rows:
 // two rows on one offering and field share one note, and an offering the
 // patch changes with no row of its own is still named.
@@ -1613,13 +1674,21 @@ func TestRenderRuleDrafts(t *testing.T) {
 			notContains: []string{"Rules that would settle these"},
 		},
 		{
+			name: "a draft that asks a person settles nothing",
+			vendors: []Vendor{{Name: "openai", Report: Report{NeedsHuman: []NeedsHuman{
+				ask("us", "gpt-5.5", "no-rule", when, "asks a person"), ask("global", "gpt-5.5", "no-rule", when, "asks a person"),
+				ask("us", "gpt-5.6", "no-rule", "another case", "Asks a reviewer which page is right."), ask("global", "gpt-5.6", "no-rule", "another case", "Asks a reviewer which page is right."),
+			}}}},
+			notContains: []string{"Rules that would settle these"},
+		},
+		{
 			name: "two drafts, each with its questions",
 			vendors: []Vendor{{Name: "openai", Report: Report{NeedsHuman: []NeedsHuman{
-				ask("us", "gpt-5.5", "no-rule", when, does), ask("us", "gpt-5.6", "no-rule", "another case", "asks a person"),
-				ask("global", "gpt-5.5", "no-rule", when, does), ask("global", "gpt-5.6", "no-rule", "another case", "asks a person"),
+				ask("us", "gpt-5.5", "no-rule", when, does), ask("us", "gpt-5.6", "no-rule", "another case", "keeps ours"),
+				ask("global", "gpt-5.5", "no-rule", when, does), ask("global", "gpt-5.6", "no-rule", "another case", "keeps ours"),
 			}}}},
 			contains: []string{draft + "- Questions 1 and 3 (2 offerings): When " + when + ", the bot " + does + ".\n" +
-				"- Questions 2 and 4 (2 offerings): When another case, the bot asks a person.\n\n"},
+				"- Questions 2 and 4 (2 offerings): When another case, the bot keeps ours.\n\n"},
 		},
 	}
 
