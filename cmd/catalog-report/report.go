@@ -463,12 +463,14 @@ type question struct {
 	offerings []string
 }
 
-// questions groups needs_human rows that differ only by offering and sources,
-// in the order first seen, so one cause is one question.
+// questions groups needs_human rows that differ only by offering, sources and
+// a note naming their own offering, in the order first seen, so one cause is
+// one question.
 func questions(needs []NeedsHuman) []question {
 	type group struct{ rule, field, catalogue, page, values string }
 
 	keys, rows := groupBy(needs, func(item NeedsHuman) (group, NeedsHuman) {
+		item.Values = otherNotes(item)
 		return group{item.Rule, item.Field, item.Catalogue, item.Page, fmt.Sprintf("%q", item.Values)}, item
 	})
 	grouped := make([]question, 0, len(keys))
@@ -491,6 +493,34 @@ func questions(needs []NeedsHuman) []question {
 	}
 
 	return grouped
+}
+
+// otherNotes is a row's values without any that only repeat its own offering,
+// with or without the package: the question names its offerings already, and
+// a copy's own ID would keep the copies of one case apart.
+func otherNotes(item NeedsHuman) []string {
+	_, id, _ := strings.Cut(item.Offering, ":")
+	return slices.DeleteFunc(slices.Clone(item.Values), func(v string) bool { return v == item.Offering || v == id })
+}
+
+// copyRegions names the region prefixes of a question's offerings in the
+// order first seen, such as "us and global", and is empty when one has no
+// named prefix.
+func copyRegions(offerings []string) string {
+	var prefixes []string
+
+	for _, offering := range offerings {
+		_, prefix, _ := regionOf(offering)
+		if reconcile.PrefixNames[prefix] == "" {
+			return ""
+		}
+
+		if !slices.Contains(prefixes, prefix) {
+			prefixes = append(prefixes, prefix)
+		}
+	}
+
+	return strings.Join(prefixes, " and ")
 }
 
 // numbered is a question with its vendor, its number across the PR, and the
@@ -522,8 +552,8 @@ func (base Base) numberQuestions(parts []vendorPart, waiting []Skipped) []number
 				name += fmt.Sprintf(" and %d more", more)
 			}
 
-			if _, prefix, _ := regionOf(row.Offering); row.Field == reconcile.FieldNewCopy && reconcile.PrefixNames[prefix] != "" {
-				name = prefix + plural(len(q.offerings), " copy: ", " copies: ") + name
+			if regions := copyRegions(q.offerings); row.Field == reconcile.FieldNewCopy && regions != "" {
+				name = regions + plural(len(q.offerings), " copy: ", " copies: ") + name
 			}
 
 			if len(parts) > 1 {
@@ -828,14 +858,18 @@ func (base Base) changesSection(changes []Change, provider string) string {
 // ruleDrafts lists each rule draft the agent gave two or more no-rule
 // offerings across the PR, with the questions it would settle, so a person
 // can turn a case that keeps coming into a rule. A draft on one offering
-// shows none.
+// shows none, and nor does one where the bot asks: it would send the case to
+// a person every time, so it settles nothing.
 func ruleDrafts(asks []numbered, needs []NeedsHuman) string {
 	type draft struct{ when, does string }
 
 	tidy := func(s string) string { return strings.TrimRight(strings.Join(strings.Fields(s), " "), ".") }
 	of := func(item NeedsHuman) draft { return draft{tidy(item.RuleWhen), tidy(item.RuleDoes)} }
 
-	drafted := slices.DeleteFunc(slices.Clone(needs), func(item NeedsHuman) bool { return item.Rule != reconcile.JudgmentRule || item.RuleWhen == "" })
+	drafted := slices.DeleteFunc(slices.Clone(needs), func(item NeedsHuman) bool {
+		verb, _, _ := strings.Cut(strings.ToLower(tidy(item.RuleDoes)), " ")
+		return item.Rule != reconcile.JudgmentRule || item.RuleWhen == "" || verb == "asks"
+	})
 	keys, offerings := groupBy(drafted, func(item NeedsHuman) (draft, string) { return of(item), item.Offering })
 
 	var lines []string
