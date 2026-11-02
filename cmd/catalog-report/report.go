@@ -87,9 +87,9 @@ func ValidateCodeFiles(files []string) []string {
 	return problems
 }
 
-// Validate lists every problem that would make the report unsafe to render,
-// including a row that names a rule RULES.md doesn't have.
-func Validate(report Report, hosts []string, rules reconcile.Rules) []string {
+// Validate lists every problem that would make vendor's report unsafe to
+// render, including a row that names a rule RULES.md doesn't have.
+func Validate(report Report, vendor string, source namedSource, rules reconcile.Rules) []string {
 	var problems []string
 	// A row's rule must exist and produce the row's outcome (RULES.md, Report values).
 	checkRule := func(where, id, outcome string) bool {
@@ -108,6 +108,13 @@ func Validate(report Report, hosts []string, rules reconcile.Rules) []string {
 	checkOffering := func(where, offering string) {
 		if !reconcile.OfferingPattern.MatchString(offering) {
 			problems = append(problems, where+": bad offering "+fmt.Sprintf("%q", offering))
+			return
+		}
+
+		// A bare ID is in the vendor's own package, so a vendor with none
+		// prefixes every offering (RULES.md, Report values).
+		if pkg, _ := reconcile.PackageOf(offering, vendor); !slices.Contains(source.Providers, pkg) {
+			problems = append(problems, where+": "+offering+" isn't in a package "+vendor+"'s run owns ("+strings.Join(source.Providers, ", ")+")")
 		}
 	}
 	checkValue := func(where, value string) {
@@ -118,7 +125,7 @@ func Validate(report Report, hosts []string, rules reconcile.Rules) []string {
 
 	checkSource := func(where, raw string) {
 		parsed, err := url.Parse(raw)
-		if err != nil || !sourcePattern.MatchString(raw) || parsed.Scheme != "https" || !slices.Contains(hosts, parsed.Hostname()) {
+		if err != nil || !sourcePattern.MatchString(raw) || parsed.Scheme != "https" || !slices.Contains(source.Hosts, parsed.Hostname()) {
 			problems = append(problems, where+": source not on a named-source host: "+fmt.Sprintf("%q", raw))
 		}
 	}
@@ -196,24 +203,35 @@ func Validate(report Report, hosts []string, rules reconcile.Rules) []string {
 			checkValue(where, value)
 		}
 
-		// A possible SDK feature is only useful if it says what's missing, and
-		// each value renders as its own Skipped line.
-		if item.Reason == noCatalogField && (len(item.Values) == 0 || slices.ContainsFunc(item.Values, func(v string) bool { return strings.TrimSpace(v) == "" })) {
-			problems = append(problems, where+": a no_catalog_field row names the missing fact in values")
+		for _, problem := range skipProblems(item, rules) {
+			problems = append(problems, where+": "+problem)
 		}
+	}
 
-		// Only a host's own Offered row can show a region isn't offered.
-		if item.Reason == regionNotOffered {
-			host, prefix, named := regionOf(item.Offering)
+	return problems
+}
 
-			switch offered, listed := rules.Offered[host]; {
-			case !named:
-				problems = append(problems, where+": "+item.Offering+" names no package")
-			case !listed:
-				problems = append(problems, where+": "+host+" has no Offered regions row")
-			case slices.Contains(offered, prefix):
-				problems = append(problems, where+": region "+prefix+" is offered on "+host)
-			}
+// skipProblems lists what a skipped row's reason needs and the row lacks.
+func skipProblems(item Skipped, rules reconcile.Rules) []string {
+	var problems []string
+
+	// A possible SDK feature is only useful if it says what's missing, and
+	// each value renders as its own Skipped line.
+	if item.Reason == noCatalogField && (len(item.Values) == 0 || slices.ContainsFunc(item.Values, func(v string) bool { return strings.TrimSpace(v) == "" })) {
+		problems = append(problems, "a no_catalog_field row names the missing fact in values")
+	}
+
+	// Only a host's own Offered row can show a region isn't offered.
+	if item.Reason == regionNotOffered {
+		host, prefix, named := regionOf(item.Offering)
+
+		switch offered, listed := rules.Offered[host]; {
+		case !named:
+			problems = append(problems, item.Offering+" names no package")
+		case !listed:
+			problems = append(problems, host+" has no Offered regions row")
+		case slices.Contains(offered, prefix):
+			problems = append(problems, "region "+prefix+" is offered on "+host)
 		}
 	}
 
