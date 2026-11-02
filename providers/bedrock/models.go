@@ -645,6 +645,22 @@ var (
 		Output: []catalog.Modality{catalog.ModalityText},
 	}
 
+	// Gemma 4 E2B also takes audio input: its model card marks Audio input
+	// supported, as Google's Gemma 4 model card does
+	// (https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-google-gemma-4-e2b.html,
+	// https://ai.google.dev/gemma/docs/core/model_card_4, read 2026-11-02).
+	gemma4E2BCaps = func() llm.ModelCapabilities {
+		caps := gemma4Caps
+		caps.Audio = true
+
+		return caps
+	}()
+
+	gemma4E2BModalities = catalog.Modalities{
+		Input:  []catalog.Modality{catalog.ModalityText, catalog.ModalityImage, catalog.ModalityAudio, catalog.ModalityVideo},
+		Output: []catalog.Modality{catalog.ModalityText},
+	}
+
 	gemma4Context256kConstraints = llm.ModelConstraints{
 		TemperatureRange: [2]float64{0.0, 2.0},
 		MaxInputTokens:   256000,
@@ -1738,10 +1754,16 @@ var bedrockFamilies = []family{
 	{
 		// Google Gemma 4 family — mantle-only, bare IDs via the
 		// bedrock-mantle Responses endpoint (model cards list Geo/Global =
-		// Not supported). On-demand STANDARD-tier US rates from the AWS
-		// pricing page (Google section); Frankfurt has a regional override. The
-		// mantle endpoint bills only input/output for Gemma — no cache
-		// usagetype is published — so cache rates stay zero.
+		// Not supported). The mantle endpoint bills only input/output for
+		// Gemma — no cache usagetype is published — so cache rates stay zero.
+		//
+		// Rates from the AWS price list (AmazonBedrock offer, usage types
+		// <region>-google.gemma-4-*-mantle-{input,output}-tokens-{standard,
+		// flex,priority}), us-east-1 and eu-central-1 files, read 2026-11-02:
+		// https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/us-east-1/index.json
+		// Rates is the US Standard card; Frankfurt has its own card for each
+		// tier the model card lists. Available is the model launch date,
+		// March 31, 2026, on each model card (read 2026-11-02).
 		BareID:        ModelGemma431B,
 		WireAPIs:      openAIMantleWireAPIs,
 		Model:         catalog.ModelGemma431B,
@@ -1751,14 +1773,13 @@ var bedrockFamilies = []family{
 		Capabilities:  gemma4Caps,
 		Modalities:    gemma4Modalities,
 		Constraints:   gemma4Context256kConstraints,
+		Life:          catalog.Lifecycle{Available: catalog.MustDate("2026-03-31")},
 		Rates:         pricing.RateCard{Base: pricing.NewRates(0.14, 0.40, 0)},
-		// Published regional Standard rates, checked 2026-10-15.
-		// Other tiers use these Standard estimates with Cost.Fallbacks;
-		// unmatched regions (including US) use the base card with a fallback.
-		// https://aws.amazon.com/bedrock/pricing/
-		Overrides: []pricing.Override{
-			{Match: pricing.Selector{Region: regionFrankfurt}, RateCard: pricing.RateCard{Base: pricing.NewRates(0.17, 0.48, 0)}},
-		},
+		Overrides: gemma4Overrides(
+			pricing.NewRates(0.168, 0.48, 0),
+			pricing.NewRates(0.07, 0.20, 0), pricing.NewRates(0.084, 0.24, 0),
+			pricing.NewRates(0.245, 0.70, 0), pricing.NewRates(0.294, 0.84, 0),
+		),
 	},
 	{
 		BareID:        ModelGemma426BA4B,
@@ -1770,14 +1791,13 @@ var bedrockFamilies = []family{
 		Capabilities:  gemma4Caps,
 		Modalities:    gemma4Modalities,
 		Constraints:   gemma4Context256kConstraints,
+		Life:          catalog.Lifecycle{Available: catalog.MustDate("2026-03-31")},
 		Rates:         pricing.RateCard{Base: pricing.NewRates(0.13, 0.40, 0)},
-		// Published regional Standard rates, checked 2026-10-15.
-		// Other tiers use these Standard estimates with Cost.Fallbacks;
-		// unmatched regions (including US) use the base card with a fallback.
-		// https://aws.amazon.com/bedrock/pricing/
-		Overrides: []pricing.Override{
-			{Match: pricing.Selector{Region: regionFrankfurt}, RateCard: pricing.RateCard{Base: pricing.NewRates(0.16, 0.48, 0)}},
-		},
+		Overrides: gemma4Overrides(
+			pricing.NewRates(0.156, 0.48, 0),
+			pricing.NewRates(0.065, 0.20, 0), pricing.NewRates(0.078, 0.24, 0),
+			pricing.NewRates(0.2275, 0.70, 0), pricing.NewRates(0.273, 0.84, 0),
+		),
 	},
 	{
 		BareID:        ModelGemma4E2B,
@@ -1786,16 +1806,28 @@ var bedrockFamilies = []family{
 		DisplayName:   "Google Gemma 4 E2B",
 		BareInvokable: true,
 		Mantle:        true,
-		Capabilities:  gemma4Caps,
-		Modalities:    gemma4Modalities,
+		Capabilities:  gemma4E2BCaps,
+		Modalities:    gemma4E2BModalities,
 		Constraints:   gemma4Context128kConstraints,
+		Life:          catalog.Lifecycle{Available: catalog.MustDate("2026-03-31")},
 		Rates:         pricing.RateCard{Base: pricing.NewRates(0.04, 0.08, 0)},
-		// Published regional Standard rates, checked 2026-10-15.
-		// Other tiers use these Standard estimates with Cost.Fallbacks;
-		// unmatched regions (including US) use the base card with a fallback.
-		// https://aws.amazon.com/bedrock/pricing/
-		Overrides: []pricing.Override{
-			{Match: pricing.Selector{Region: regionFrankfurt}, RateCard: pricing.RateCard{Base: pricing.NewRates(0.05, 0.1, 0)}},
-		},
+		Overrides: gemma4Overrides(
+			pricing.NewRates(0.048, 0.096, 0),
+			pricing.NewRates(0.02, 0.04, 0), pricing.NewRates(0.024, 0.048, 0),
+			pricing.NewRates(0.07, 0.14, 0), pricing.NewRates(0.084, 0.168, 0),
+		),
 	},
+}
+
+// gemma4Overrides returns a Gemma 4 family's Frankfurt Standard card and
+// its Flex and Priority cards, for the US and Frankfurt. The US Standard
+// card is the family's Rates; the other US source regions bill at US rates.
+func gemma4Overrides(frankfurt, flex, frankfurtFlex, priority, frankfurtPriority pricing.Rates) []pricing.Override {
+	return []pricing.Override{
+		{Match: pricing.Selector{Region: regionFrankfurt}, RateCard: pricing.RateCard{Base: frankfurt}},
+		{Match: pricing.Selector{ServiceTier: llm.ServiceTierFlex}, RateCard: pricing.RateCard{Base: flex}},
+		{Match: pricing.Selector{ServiceTier: llm.ServiceTierFlex, Region: regionFrankfurt}, RateCard: pricing.RateCard{Base: frankfurtFlex}},
+		{Match: pricing.Selector{ServiceTier: llm.ServiceTierPriority}, RateCard: pricing.RateCard{Base: priority}},
+		{Match: pricing.Selector{ServiceTier: llm.ServiceTierPriority, Region: regionFrankfurt}, RateCard: pricing.RateCard{Base: frankfurtPriority}},
+	}
 }

@@ -115,10 +115,10 @@ func TestServedLocationsMatrix(t *testing.T) {
 		vertex.ModelGemini36Flash: {"global", "us", "eu"},
 		vertex.ModelGemini35Flash: {
 			"global", "us", "eu",
-			"northamerica-northeast1", "europe-west2", "europe-west3",
+			"europe-west2", "europe-west3",
 			"asia-northeast1", "asia-south1", "asia-southeast1", "australia-southeast1",
 		},
-		vertex.ModelGemini35FlashLite:   {"global", "us", "eu"},
+		vertex.ModelGemini35FlashLite:   {"global", "us", "eu", "asia-south1"},
 		vertex.ModelGemini31FlashLite:   {"global", "us", "eu"},
 		vertex.ModelGemini31ProPreview:  {"global"},
 		vertex.ModelGemini3FlashPreview: {"global"},

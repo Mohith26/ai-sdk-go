@@ -92,16 +92,20 @@ var servedLocations = map[string][]string{
 		"us", "eu",
 	},
 	// This row is the model page's "Model availability" list; its Standard
-	// PayGo line names only global, us and eu.
+	// PayGo line names only global, us and eu. Re-read 2026-11-02:
+	// northamerica-northeast1 is now listed only under ML processing, so it
+	// is no longer served.
 	ModelGemini35Flash: {
 		LocationGlobal,
 		"us", "eu",
-		"northamerica-northeast1", "europe-west2", "europe-west3",
+		"europe-west2", "europe-west3",
 		"asia-northeast1", "asia-south1", "asia-southeast1", "australia-southeast1",
 	},
+	// The model page's Provisioned Throughput line adds asia-south1 (read
+	// 2026-11-02).
 	ModelGemini35FlashLite: {
 		LocationGlobal,
-		"us", "eu",
+		"us", "eu", "asia-south1",
 	},
 	ModelGemini31FlashLite: {
 		LocationGlobal,

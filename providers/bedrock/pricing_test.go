@@ -508,9 +508,9 @@ func TestRegionalOnDemandPricing(t *testing.T) {
 		input, output int64
 	}{
 		{ModelGemma431B, regionVirginia, 14_000_000, 40_000_000},
-		{ModelGemma431B, regionFrankfurt, 17_000_000, 48_000_000},
-		{ModelGemma426BA4B, regionFrankfurt, 16_000_000, 48_000_000},
-		{ModelGemma4E2B, regionFrankfurt, 5_000_000, 10_000_000},
+		{ModelGemma431B, regionFrankfurt, 16_800_000, 48_000_000},
+		{ModelGemma426BA4B, regionFrankfurt, 15_600_000, 48_000_000},
+		{ModelGemma4E2B, regionFrankfurt, 4_800_000, 9_600_000},
 		{ModelMistralLarge3, regionOregon, 50_000_000, 150_000_000},
 		{ModelMistralLarge3, regionMumbai, 59_000_000, 176_000_000},
 		{ModelMistralLarge3, regionTokyo, 61_000_000, 182_000_000},
@@ -536,12 +536,45 @@ func TestRegionalNonStandardPricingFallback(t *testing.T) {
 	prices, err := pricing.NewCatalog(pricing.WithSource(Catalog()))
 	require.NoError(t, err)
 
-	requested := pricing.Selector{Region: regionFrankfurt, ServiceTier: llm.ServiceTierPriority}
-	cost, err := prices.Calculate(ProviderName, ModelGemma431B, &llm.TokenUsage{InputTokens: 1_000_000}, pricing.CalcRequest{Selector: requested})
+	requested := pricing.Selector{Region: regionMumbai, ServiceTier: llm.ServiceTierPriority}
+	cost, err := prices.Calculate(ProviderName, ModelMistralLarge3, &llm.TokenUsage{InputTokens: 1_000_000}, pricing.CalcRequest{Selector: requested})
 	require.NoError(t, err)
-	assert.Equal(t, int64(17_000_000), cost.Total)
-	assert.Equal(t, pricing.Selector{Region: regionFrankfurt}, cost.AppliedSelector)
-	assert.Equal(t, []pricing.Fallback{{Requested: requested, Resolved: pricing.Selector{Region: regionFrankfurt}}}, cost.Fallbacks)
+	assert.Equal(t, int64(59_000_000), cost.Total)
+	assert.Equal(t, pricing.Selector{Region: regionMumbai}, cost.AppliedSelector)
+	assert.Equal(t, []pricing.Fallback{{Requested: requested, Resolved: pricing.Selector{Region: regionMumbai}}}, cost.Fallbacks)
+}
+
+// Gemma 4's Flex and Priority tiers carry their own price-list rates, in the
+// US and in Frankfurt, rather than falling back to Standard.
+func TestGemma4ServiceTierPricing(t *testing.T) {
+	t.Parallel()
+
+	prices, err := pricing.NewCatalog(pricing.WithSource(Catalog()))
+	require.NoError(t, err)
+
+	for _, tt := range []struct {
+		model, region string
+		tier          llm.ServiceTier
+		input, output int64
+	}{
+		{ModelGemma431B, "us-east-1", llm.ServiceTierFlex, 7_000_000, 20_000_000},
+		{ModelGemma431B, "us-east-1", llm.ServiceTierPriority, 24_500_000, 70_000_000},
+		{ModelGemma431B, regionFrankfurt, llm.ServiceTierFlex, 8_400_000, 24_000_000},
+		{ModelGemma431B, regionFrankfurt, llm.ServiceTierPriority, 29_400_000, 84_000_000},
+		{ModelGemma426BA4B, "us-east-1", llm.ServiceTierPriority, 22_750_000, 70_000_000},
+		{ModelGemma4E2B, regionFrankfurt, llm.ServiceTierPriority, 8_400_000, 16_800_000},
+	} {
+		t.Run(tt.model+"/"+tt.region+"/"+string(tt.tier), func(t *testing.T) {
+			t.Parallel()
+
+			selector := pricing.Selector{Region: tt.region, ServiceTier: tt.tier}
+			cost, err := prices.Calculate(ProviderName, tt.model, &llm.TokenUsage{InputTokens: 1_000_000, OutputTokens: 1_000_000}, pricing.CalcRequest{Selector: selector})
+			require.NoError(t, err)
+			assert.Equal(t, tt.input, cost.Breakdown[pricing.UsageFieldInput])
+			assert.Equal(t, tt.output, cost.Breakdown[pricing.UsageFieldOutput])
+			assert.Equal(t, tt.tier, cost.AppliedSelector.ServiceTier)
+		})
+	}
 }
 
 func TestGPT6LunaPricing(t *testing.T) {
