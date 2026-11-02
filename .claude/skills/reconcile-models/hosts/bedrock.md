@@ -16,8 +16,12 @@ Where Amazon Bedrock publishes facts for the models it serves. AWS sets its own 
 | One OpenAI model | the card the cards page links | Model Details (launch date, EOL, context window, max output), Endpoints and APIs supported, Capabilities and Features, Pricing, Programmatic Access (the IDs), Service Tiers, Regional Availability |
 | Google's model cards | `https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-google.md` | a link to each Gemma model's card |
 | One Gemma model | the card the cards page links | Model Details, Capabilities and Features, Programmatic Access, Service Tiers, Regional Availability; its Pricing section only links to the pricing page |
+| Amazon's model cards | `https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-amazon.md` | a link to each Amazon model's card |
+| Meta's model cards | `https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-meta.md` | a link to each Llama model's card |
+| Mistral AI's model cards | `https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-mistral-ai.md` | a link to each Mistral model's card |
+| One Amazon, Llama or Mistral model | the card the cards page links | Model Details, Capabilities and Features, Programmatic Access, Service Tiers, Regional Availability |
 
-The table names Anthropic's, OpenAI's and Google's cards. The other vendors `providers/bedrock` carries (Amazon Nova, Mistral) have cards linked from each vendor's model-cards page. An OpenAI card's file name drops dots unevenly (`model-card-openai-gpt-56-sol.md` for GPT-5.6 Sol, `model-card-openai-gpt-6-1-sol.md` for GPT-6.1 Sol), so follow the cards page's link instead of building the name. Most OpenAI cards use these section names; GPT-6 Sol's and GPT-6 Luna's call the ID table "Call the model" and the region tables "Supported Regions".
+An OpenAI card's file name drops dots unevenly (`model-card-openai-gpt-56-sol.md` for GPT-5.6 Sol, `model-card-openai-gpt-6-1-sol.md` for GPT-6.1 Sol), so follow the cards page's link instead of building the name. Most OpenAI cards use these section names; GPT-6 Sol's and GPT-6 Luna's call the ID table "Call the model" and the region tables "Supported Regions".
 
 ## IDs and copies
 

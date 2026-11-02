@@ -115,8 +115,10 @@ func TestRulesReachTheAgent(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Contains(t, string(prompt), ".claude/skills/reconcile-models/hosts/", "the prompt must send the agent to the host pages")
+	assert.Contains(t, string(prompt), "hosts/{{PROVIDER}}.md", "the prompt must send the agent to its vendor's page")
 
-	// Every package a run owns has a how-to page, next to the shared one.
+	// Every package a run owns has a how-to page, next to the shared one, and
+	// so does every vendor, for its own pages.
 	runs := namedSources(t)
 	pages := map[string]string{"prompt.md": string(prompt)}
 
@@ -128,8 +130,8 @@ func TestRulesReachTheAgent(t *testing.T) {
 		pages[skill+"/SKILL.md"] = string(text)
 	}
 
-	for _, run := range runs {
-		for _, pkg := range append([]string{"shared"}, run.Providers...) {
+	for vendor, run := range runs {
+		for _, pkg := range append([]string{"shared", vendor}, run.Providers...) {
 			page, err := os.ReadFile(filepath.Join("..", "..", ".claude", "skills", "reconcile-models", "hosts", pkg+".md"))
 			require.NoError(t, err, "no host page for %s", pkg)
 

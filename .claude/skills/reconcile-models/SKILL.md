@@ -27,9 +27,11 @@ the workflow.
 
 Facts come only from the hosts' own pages, and code cites only those.
 
-- **Anthropic API, OpenAI API, Gemini API, Vertex, Bedrock:** their host
-  pages (`hosts/anthropic.md`, `hosts/openai.md`, `hosts/google.md`,
-  `hosts/vertex.md`, `hosts/bedrock.md`).
+- **Anthropic API, OpenAI API, Gemini API, Meta Model API, Vertex, Bedrock:**
+  their host pages (`hosts/anthropic.md`, `hosts/openai.md`,
+  `hosts/google.md`, `hosts/meta.md`, `hosts/vertex.md`, `hosts/bedrock.md`).
+- **Amazon and Mistral AI,** which have no package of their own: their vendor
+  pages (`hosts/amazon.md`, `hosts/mistral.md`).
 - **Aggregators:** see `hosts/shared.md` ("Hand runs: LiteLLM leads").
 
 ## Per-entry checklist
