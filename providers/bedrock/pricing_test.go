@@ -505,7 +505,7 @@ func TestRegionalOnDemandPricing(t *testing.T) {
 		{ModelGemma431B, regionFrankfurt, 17_000_000, 48_000_000},
 		{ModelGemma426BA4B, regionFrankfurt, 16_000_000, 48_000_000},
 		{ModelGemma4E2B, regionFrankfurt, 5_000_000, 10_000_000},
-		{ModelMistralLarge3, regionOregon, 50_000_000, 150_000_000},
+		{ModelMistralLarge3, regionOregon, 50_000_000, 165_000_000},
 		{ModelMistralLarge3, regionMumbai, 59_000_000, 176_000_000},
 		{ModelMistralLarge3, regionTokyo, 61_000_000, 182_000_000},
 		{ModelMistralLarge3, regionSaoPaulo, 61_000_000, 182_000_000},

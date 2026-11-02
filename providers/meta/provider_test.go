@@ -48,7 +48,7 @@ func TestMuseSpark13Catalog(t *testing.T) {
 	assert.Contains(t, o.Modalities.Input, catalog.ModalityDocument)
 	assert.Equal(t, []catalog.Modality{catalog.ModalityText}, o.Modalities.Output)
 	assert.Equal(t, int64(125_000_000), o.Pricing.Default.Base.InputPerMillion)
-	assert.Equal(t, int64(425_000_000), o.Pricing.Default.Base.OutputPerMillion)
+	assert.Equal(t, int64(450_000_000), o.Pricing.Default.Base.OutputPerMillion)
 	assert.Equal(t, int64(15_000_000), o.Pricing.Default.Base.CachedInputPerMillion)
 	assert.Empty(t, o.Pricing.Default.Brackets)
 }

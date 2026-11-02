@@ -1191,8 +1191,8 @@ var bedrockFamilies = []family{
 		Capabilities: nova2LiteCaps,
 		Modalities:   nova2LiteModalities,
 		Constraints:  nova2LiteConstraints,
-		GlobalRates:  &pricing.RateCard{Base: pricing.NewRates(0.30, 2.50, 0.075)},
-		Rates:        pricing.RateCard{Base: pricing.NewRates(0.33, 2.75, 0.0825)},
+		GlobalRates:  &pricing.RateCard{Base: pricing.NewRates(0.30, 2.70, 0.075)},
+		Rates:        pricing.RateCard{Base: pricing.NewRates(0.33, 2.97, 0.0825)},
 	},
 	{
 		// Mistral Large 3 — on-demand / in-region, BARE ID only (no
@@ -1213,7 +1213,7 @@ var bedrockFamilies = []family{
 		Capabilities:  mistralLarge3Caps,
 		Modalities:    mistralLarge3Modalities,
 		Constraints:   mistralLarge3Constraints,
-		Rates:         pricing.RateCard{Base: pricing.NewRates(0.50, 1.50, 0)},
+		Rates:         pricing.RateCard{Base: pricing.NewRates(0.50, 1.65, 0)},
 		// Published regional Standard rates, checked 2026-10-15.
 		// Other tiers use these Standard estimates with Cost.Fallbacks;
 		// unmatched regions (including US) use the base card with a fallback.

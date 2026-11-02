@@ -75,6 +75,6 @@ func entries() []catalog.Entry {
 		Attributes: map[string]string{"output_token_limit_source": "sdk_conservative_limit"},
 		Life:       catalog.Lifecycle{Available: catalog.MustDate("2026-09-02")},
 		// https://dev.meta.ai/docs/pricing-rate-limits — no long-context premium.
-		Pricing: pricing.FlatInfo(1.25, 4.25, 0.15),
+		Pricing: pricing.FlatInfo(1.25, 4.50, 0.15),
 	}}
 }
