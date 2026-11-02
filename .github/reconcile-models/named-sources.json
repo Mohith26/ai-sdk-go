@@ -105,8 +105,6 @@
       "model_prefix": "mistral/",
       "must_contain": "Mistral",
       "pages": [
-        {"id": "mistral-models", "type": "markdown", "url": "https://docs.mistral.ai/models.md"},
-        {"id": "mistral-lifecycle", "type": "markdown", "url": "https://docs.mistral.ai/inference/model-lifecycle.md"},
         {"id": "bedrock-model-cards", "type": "markdown", "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards-mistral-ai.md"},
         {"id": "bedrock-lifecycle-legacy", "type": "markdown", "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.md", "must_contain": "Legacy"},
         {"id": "bedrock-lifecycle", "type": "markdown", "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle.md", "must_contain": "Model lifecycle"}
