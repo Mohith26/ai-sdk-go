@@ -26,14 +26,20 @@ import (
 )
 
 // freeCacheWriteModels lists Bedrock models AWS documents as charging nothing
-// to populate the cache (their cache-write usagetype is priced at $0.00). For
-// these, cache-write is expected to be exactly zero; every other model must
-// carry a positive cache-write rate.
+// to populate the cache (their cache-write usagetype is priced at $0.00), or
+// whose model card prices cache reads but prints no cache-write rate (GPT-5.5
+// and GPT-5.4, which cache implicitly). For these, cache-write is expected to
+// be exactly zero; every other model must carry a positive cache-write rate.
 var freeCacheWriteModels = map[string]bool{
 	ModelNova2LiteGlobal: true,
 	ModelNova2LiteUS:     true,
 	ModelNova2LiteEU:     true,
 	ModelNova2LiteJP:     true,
+
+	ModelGPT55Global: true,
+	ModelGPT55US:     true,
+	ModelGPT54Global: true,
+	ModelGPT54US:     true,
 }
 
 // noCacheModels lists Bedrock models that do not support prompt caching at all

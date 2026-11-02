@@ -334,6 +334,17 @@ const (
 
 	// ModelGPT56Luna is optimized for fast, cost-efficient inference.
 	ModelGPT56Luna = "openai.gpt-5.6-luna"
+
+	// ModelGPT55 is GPT-5.5's bare ID. On bedrock-runtime it is not
+	// invokable and only builds the US and global profile IDs.
+	ModelGPT55       = "openai.gpt-5.5"
+	ModelGPT55Global = "global." + ModelGPT55
+	ModelGPT55US     = "us." + ModelGPT55
+
+	// ModelGPT54 is GPT-5.4's bare ID, split the same way as GPT-5.5's.
+	ModelGPT54       = "openai.gpt-5.4"
+	ModelGPT54Global = "global." + ModelGPT54
+	ModelGPT54US     = "us." + ModelGPT54
 )
 
 // ModelMetadataRequiresProviderDataSharing is set to "true" on discovery
@@ -790,6 +801,17 @@ var (
 		MaxInputTokens:   922000,
 		MaxOutputTokens:  128000,
 		SupportedParams:  []string{"temperature", "max_tokens"},
+	}
+
+	// GPT-5.5 and GPT-5.4 on bedrock-runtime Converse. Their cards give a
+	// 1,050,000 window shared by input and output and 128,000 max output
+	// tokens, and neither they nor OpenAI's model pages give a separate
+	// input cap, so the window is MaxInputTokens. Unprobed: only max_tokens
+	// is advertised, as for GPT-6 Astra's Converse profiles.
+	gpt55Constraints = llm.ModelConstraints{
+		MaxInputTokens:  1_050_000,
+		MaxOutputTokens: 128_000,
+		SupportedParams: []string{"max_tokens"},
 	}
 )
 
@@ -1288,6 +1310,8 @@ var bedrockFamilies = []family{
 		Reasoning: catalog.ReasoningSupport{
 			Efforts: []ReasoningEffort{ReasoningEffortLow, ReasoningEffortMedium, ReasoningEffortHigh, ReasoningEffortXHigh, ReasoningEffortMax},
 		},
+		// Model launch date per the card (read 2026-11-02).
+		Life: catalog.Lifecycle{Available: catalog.MustDate("2026-09-08")},
 		Rates: pricing.RateCard{
 			Base: pricing.NewRates(11.00, 55.00, 1.10).WithCacheCreation(0, 0, 13.75),
 			Brackets: []pricing.Bracket{{
@@ -1419,6 +1443,8 @@ var bedrockFamilies = []family{
 		Reasoning: catalog.ReasoningSupport{
 			Efforts: []ReasoningEffort{ReasoningEffortLow, ReasoningEffortMedium, ReasoningEffortHigh, ReasoningEffortXHigh, ReasoningEffortMax},
 		},
+		// Model launch date per the card (read 2026-11-02).
+		Life: catalog.Lifecycle{Available: catalog.MustDate("2026-09-29")},
 		Rates: pricing.RateCard{
 			Base: pricing.NewRates(2.20, 11.00, 0.11).WithCacheCreation(0, 0, 2.75),
 			Brackets: []pricing.Bracket{{
@@ -1555,6 +1581,8 @@ var bedrockFamilies = []family{
 		Reasoning: catalog.ReasoningSupport{
 			Efforts: []ReasoningEffort{ReasoningEffortNone, ReasoningEffortLow, ReasoningEffortMedium, ReasoningEffortHigh, ReasoningEffortXHigh, ReasoningEffortMax},
 		},
+		// Model launch date per the card (read 2026-11-02).
+		Life: catalog.Lifecycle{Available: catalog.MustDate("2026-09-22")},
 		Rates: pricing.RateCard{
 			Base: pricing.NewRates(2.20, 11.00, 0.22).WithCacheCreation(0, 0, 2.75),
 			Brackets: []pricing.Bracket{{
@@ -1582,6 +1610,8 @@ var bedrockFamilies = []family{
 		Modalities:    gpt56Modalities,
 		Constraints:   gpt56Constraints,
 		Reasoning:     gpt56Reasoning,
+		// Model launch date per the card (read 2026-11-02).
+		Life: catalog.Lifecycle{Available: catalog.MustDate("2026-07-13")},
 		Rates: pricing.RateCard{
 			Base: pricing.NewRates(4.40, 22.00, 0.44).WithCacheCreation(0, 0, 5.50),
 			Brackets: []pricing.Bracket{{
@@ -1601,6 +1631,8 @@ var bedrockFamilies = []family{
 		Modalities:    gpt56Modalities,
 		Constraints:   gpt56Constraints,
 		Reasoning:     gpt56Reasoning,
+		// Model launch date per the card (read 2026-11-02).
+		Life: catalog.Lifecycle{Available: catalog.MustDate("2026-07-13")},
 		Rates: pricing.RateCard{
 			Base: pricing.NewRates(2.20, 13.20, 0.22).WithCacheCreation(0, 0, 2.75),
 			Brackets: []pricing.Bracket{{
@@ -1620,11 +1652,86 @@ var bedrockFamilies = []family{
 		Modalities:    gpt56Modalities,
 		Constraints:   gpt56Constraints,
 		Reasoning:     gpt56Reasoning,
+		// Model launch date per the card (read 2026-11-02).
+		Life: catalog.Lifecycle{Available: catalog.MustDate("2026-07-13")},
 		Rates: pricing.RateCard{
 			Base: pricing.NewRates(0.22, 1.32, 0.022).WithCacheCreation(0, 0, 0.275),
 			Brackets: []pricing.Bracket{{
 				MinContextTokens: 272_001,
 				Rates:            pricing.NewRates(0.44, 1.98, 0.044).WithCacheCreation(0, 0, 0.55),
+			}},
+		},
+	},
+	{
+		// OpenAI GPT-5.5 — inference-profile-only on bedrock-runtime:
+		// https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-55.html
+		// (read 2026-11-02). Standard tier only; the card prints no
+		// cache-write rate. Its bedrock-mantle bare ID isn't registered
+		// beside the profiles (bare-id-unregistered).
+		// Rates estimated: the card prints only In-Region rates, which the
+		// US profile takes, since a geographic profile costs what In-Region
+		// does (https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference.html).
+		// Global is In-Region / 1.10: the global profile page states about
+		// 10% less (https://docs.aws.amazon.com/bedrock/latest/userguide/global-cross-region-inference.html),
+		// and the other OpenAI cards print exactly 1.10x.
+		// The card lists structured outputs and client-side tool calling for
+		// other APIs than Converse; the family lists them, unprobed.
+		// Explicit prompt caching is unsupported, so no cache points.
+		BareID:         ModelGPT55,
+		WireAPIs:       openAIRuntimeWireAPIs,
+		Model:          catalog.ModelGPT5_5,
+		DisplayName:    "OpenAI GPT-5.5",
+		Profiles:       []string{"global", "us"},
+		ProfileRegions: gpt55ProfileRegions,
+		NoCachePoints:  true,
+		Capabilities:   gpt6AstraCaps,
+		Modalities:     gpt56Modalities,
+		Constraints:    gpt55Constraints,
+		Reasoning:      converseReasoningNoControls,
+		GlobalRates: &pricing.RateCard{
+			Base: pricing.NewRates(5.00, 30.00, 0.50),
+			Brackets: []pricing.Bracket{{
+				MinContextTokens: 272_001,
+				Rates:            pricing.NewRates(10.00, 45.00, 1.00),
+			}},
+		},
+		Rates: pricing.RateCard{
+			Base: pricing.NewRates(5.50, 33.00, 0.55),
+			Brackets: []pricing.Bracket{{
+				MinContextTokens: 272_001,
+				Rates:            pricing.NewRates(11.00, 49.50, 1.10),
+			}},
+		},
+	},
+	{
+		// OpenAI GPT-5.4 — inference-profile-only on bedrock-runtime:
+		// https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-54.html
+		// (read 2026-11-02). Authored as GPT-5.5 above: rates estimated from
+		// the card's In-Region rates by the same ratio, with the same
+		// capabilities and routing table.
+		BareID:         ModelGPT54,
+		WireAPIs:       openAIRuntimeWireAPIs,
+		Model:          catalog.ModelGPT5_4,
+		DisplayName:    "OpenAI GPT-5.4",
+		Profiles:       []string{"global", "us"},
+		ProfileRegions: gpt55ProfileRegions,
+		NoCachePoints:  true,
+		Capabilities:   gpt6AstraCaps,
+		Modalities:     gpt56Modalities,
+		Constraints:    gpt55Constraints,
+		Reasoning:      converseReasoningNoControls,
+		GlobalRates: &pricing.RateCard{
+			Base: pricing.NewRates(2.50, 15.00, 0.25),
+			Brackets: []pricing.Bracket{{
+				MinContextTokens: 272_001,
+				Rates:            pricing.NewRates(5.00, 22.50, 0.50),
+			}},
+		},
+		Rates: pricing.RateCard{
+			Base: pricing.NewRates(2.75, 16.50, 0.275),
+			Brackets: []pricing.Bracket{{
+				MinContextTokens: 272_001,
+				Rates:            pricing.NewRates(5.50, 24.75, 0.55),
 			}},
 		},
 	},
